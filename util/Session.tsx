@@ -1,14 +1,18 @@
 import { createContext, useContext } from "react";
 
+import { loginResponseSchema } from "./auth.schema";
 import { useStorageState } from "./useStorageState";
 
 const AuthContext = createContext<{
-  signIn: (auth: { email: string; password: string }) => Promise<boolean>;
+  signIn: (auth: {
+    email: string;
+    password: string;
+  }) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   session?: string | null;
   isLoading: boolean;
 }>({
-  signIn: async () => false,
+  signIn: async () => ({ success: false }),
   signOut: async () => {},
   session: null,
   isLoading: false,
@@ -17,6 +21,7 @@ const AuthContext = createContext<{
 // This hook can be used to access the user info.
 export function useSession() {
   const value = useContext(AuthContext);
+
   if (process.env.NODE_ENV !== "production") {
     if (!value) {
       throw new Error("useSession must be wrapped in a <SessionProvider />");
@@ -33,24 +38,46 @@ export function SessionProvider(props: React.PropsWithChildren) {
     <AuthContext.Provider
       value={{
         signIn: async ({ password, email }) => {
-          // Perform sign-in logic here
           try {
-            const resp = await fetch("http://localhost:8081/auth", {
+            const resp = await fetch("http://localhost:8081/api/sign-in", {
               method: "POST",
               body: JSON.stringify({ email, password }),
             });
 
             const json = await resp.json();
 
-            console.log({ json });
+            const parsedJson = loginResponseSchema.safeParse(json);
 
-            setSession("xxx");
+            if (!resp.ok && parsedJson.success && parsedJson.data.error) {
+              return {
+                success: false,
+                error: parsedJson.data.error,
+              };
+            }
 
-            return true;
-          } catch (error) {
+            if (parsedJson.success) {
+              if (!parsedJson.data.session) {
+                throw new Error("No session in response");
+              }
+
+              setSession(parsedJson.data.session);
+
+              return { success: true };
+            }
+
+            const firstError = parsedJson.error.errors.at(0);
+
+            return {
+              success: false,
+              error: `${firstError?.path} - ${firstError?.message}`,
+            };
+          } catch (error: any) {
             console.error(error);
 
-            return false;
+            return {
+              success: false,
+              error: error.message || String(error),
+            };
           }
         },
         signOut: async () => {

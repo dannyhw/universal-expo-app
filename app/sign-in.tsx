@@ -11,9 +11,8 @@ import {
   View,
 } from "react-native";
 
-import { LoginFormData, loginValidationSchema } from "./auth.schema";
-
 import { useSession } from "~/util/Session";
+import { LoginFormData, loginValidationSchema } from "~/util/auth.schema";
 
 export default function SignIn() {
   const {
@@ -37,9 +36,11 @@ export default function SignIn() {
 
   const onSubmit = handleSubmit(async ({ email, password }: LoginFormData) => {
     try {
-      const success = await signIn({ email, password });
+      const { success, error } = await signIn({ email, password });
       if (success) {
         router.replace("/(secure)/home");
+      } else {
+        console.log("Failed to sign in", error);
       }
     } catch (error) {
       console.error(error);
@@ -117,9 +118,9 @@ export default function SignIn() {
           onPress={onSubmit}
         >
           {isSubmitting ? (
-            <ActivityIndicator />
+            <ActivityIndicator size="small" className="h-6" />
           ) : (
-            <Text className="text-center text-white">Sign In</Text>
+            <Text className="text-center text-base text-white">Sign In</Text>
           )}
         </TouchableOpacity>
       </View>

@@ -39,7 +39,10 @@
     "react-native-web": "~0.19.10",
     "zod": "^3.22.4",
     "@hookform/resolvers": "^3.3.4",
-    "react-hook-form": "^7.50.1"
+    "react-hook-form": "^7.50.1",
+    "lucia": "^3.0.1",
+    "oslo": "^1.1.2",
+    "@lucia-auth/adapter-drizzle": "^1.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
